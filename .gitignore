@@ -54,3 +54,20 @@ Thumbs.db
 *.fdb_latexmk
 *.fls
 
+# PDFs (large; keep handouts local)
+*.pdf
+
+# ML / RL checkpoints and outputs
+*.pt
+*.pth
+*.ckpt
+checkpoints/
+outputs/
+videos/
+*.mp4
+*.avi
+tf_logs/
+runs/
+
+# Cursor
+.cursor/
