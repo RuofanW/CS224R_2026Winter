@@ -1,0 +1,5 @@
+# Minimal deps for local PyTorch practice (test_without_env.py).
+# Full assignment training still needs requirements.txt + Modal/D4RL.
+torch>=1.13
+numpy>=1.23,<2
+scipy
