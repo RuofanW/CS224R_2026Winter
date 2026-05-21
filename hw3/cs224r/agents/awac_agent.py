@@ -92,10 +92,17 @@ class AWACAgent(BaseAgent):
             # HINT: Approximate V(s) by sampling one action a' ~ π(·|s) from
             #     actor and evaluating Q(s, a') with get_q.
             ### YOUR CODE START HERE ###
-
-            adv = None
+            q = self.critic.get_q(ob_no, ac_na)
+            dist = self.actor.forward(ob_no)
+            sampled_ac = dist.sample()
+            if self.discrete_action:
+                sampled_ac = sampled_ac.long()
+            else:
+                sampled_ac = sampled_ac.squeeze(-1) 
+            v = self.critic.get_q(ob_no, sampled_ac)
+            adv = q - v
             ### YOUR CODE END HERE ###
-        return adv
+        return ptu.to_numpy(adv)
 
     def train(self, ob_no, ac_na, re_n, next_ob_no, terminal_n):
         """Performs one training iteration (critic + actor updates).
@@ -122,9 +129,15 @@ class AWACAgent(BaseAgent):
             #     the AWAC critic Bellman backup.
             with torch.no_grad():
                 ### YOUR CODE START HERE ###
-                next_actions = None
+                dist = self.actor.forward(ptu.from_numpy(next_ob_no))
+                next_actions = dist.sample()
+                if self.discrete_action:
+                    next_actions = next_actions.long()
+                else:
+                    next_actions = next_actions.squeeze(-1) 
                 ### YOUR CODE END HERE ###
-
+            # print("action ", ac_na)
+            # print("next_actions ", next_actions)
             critic_loss = self.critic.update(
                 ob_no, ac_na, next_ob_no, env_reward, terminal_n, next_actions
             )
@@ -133,8 +146,9 @@ class AWACAgent(BaseAgent):
             # 1): Estimate the advantage
             # 2): Calculate the actor loss
             ### YOUR CODE START HERE ###
+            adv = self.estimate_advantage(ob_no, ac_na)
 
-            actor_loss = None
+            actor_loss = self.actor.update(ob_no, ac_na, adv_n=adv)
             ### YOUR CODE END HERE ###
 
             self.critic.update_target_network()

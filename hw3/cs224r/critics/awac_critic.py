@@ -172,8 +172,18 @@ class AWACCritic(BaseCritic):
 
         # TD target = r + γ * min(Q1_target, Q2_target)(s', a') * (1 - done).
         
-        loss = None
-        loss2 = None
+        q1 = self._get_q_value(self.q_net, ob_no, ac_na)
+        q2 = self._get_q_value(self.q_net2, ob_no, ac_na)
+
+        with torch.no_grad():
+            target_q = self.get_target_q(next_ob_no, next_actions)
+            target_q = target_q * (1.0 - terminal_n)
+            y = reward_n + self.gamma * target_q
+        
+        loss1 = self.mse_loss(y, q1)
+        loss2 = self.mse_loss(y, q2)        
+        loss = loss1
+        loss2 = loss2
         ### YOUR CODE END HERE ###
 
         self.optimizer.zero_grad()

@@ -10,8 +10,11 @@ Covers:
 Usage (from hw3/):
     pip install -e .
     python test_without_env.py
+    python test_without_env.py --test awac_critic
+    python test_without_env.py --test awac_critic_continuous
 """
 
+import argparse
 import sys
 import traceback
 
@@ -363,7 +366,32 @@ def test_multiple_train_steps():
 # Main
 # ---------------------------------------------------------------------------
 
+TEST_REGISTRY = {
+    'awac_policy': ('MLPPolicyAWAC.update', test_awac_policy_update),
+    'awac_critic': ('AWACCritic.update (discrete)', lambda: test_awac_critic_update(True)),
+    'awac_critic_continuous': (
+        'AWACCritic.update (continuous)', lambda: test_awac_critic_update(False)),
+    'iql_expectile': ('IQL expectile_loss', test_iql_expectile_loss),
+    'iql_update_v': ('IQLCritic.update_v', test_iql_update_v),
+    'iql_update_q': ('IQLCritic.update_q', test_iql_update_q),
+    'awac_agent': ('AWACAgent.train (discrete)', lambda: test_awac_agent_train(True)),
+    'awac_agent_continuous': (
+        'AWACAgent.train (continuous)', lambda: test_awac_agent_train(False)),
+    'iql_agent': ('IQLAgent.train', test_iql_agent_train),
+    'multi_step': ('Multiple train steps', test_multiple_train_steps),
+}
+
+
 if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description='HW3 local tests (no gym/D4RL)')
+    parser.add_argument(
+        '--test', '-t',
+        choices=list(TEST_REGISTRY.keys()) + ['all'],
+        default='all',
+        help='Run one test (default: all). Use awac_critic for AWACCritic.update.',
+    )
+    args = parser.parse_args()
+
     ptu.init_gpu(use_gpu=False)
 
     print("\n" + "=" * 60)
@@ -371,18 +399,10 @@ if __name__ == '__main__':
     print("=" * 60)
     print("\nInstall once:  cd hw3 && pip install -e .\n")
 
-    tests = [
-        ("MLPPolicyAWAC.update", test_awac_policy_update),
-        ("AWACCritic.update (discrete)", lambda: test_awac_critic_update(True)),
-        ("IQL expectile_loss", test_iql_expectile_loss),
-        ("IQLCritic.update_v", test_iql_update_v),
-        ("IQLCritic.update_q", test_iql_update_q),
-        ("AWACAgent.train (discrete)", lambda: test_awac_agent_train(True)),
-        ("IQLAgent.train", test_iql_agent_train),
-        ("AWACCritic.update (continuous)", lambda: test_awac_critic_update(False)),
-        ("AWACAgent.train (continuous)", lambda: test_awac_agent_train(False)),
-        ("Multiple train steps", test_multiple_train_steps),
-    ]
+    if args.test == 'all':
+        tests = list(TEST_REGISTRY.values())
+    else:
+        tests = [TEST_REGISTRY[args.test]]
 
     results = []
     for name, fn in tests:
